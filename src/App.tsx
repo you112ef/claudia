@@ -1,477 +1,437 @@
-import { useState, useEffect, useRef } from "react";
-import { 
-  MoreVertical, 
-  Plus, 
-  Home, 
-  Brain, 
-  FolderOpen, 
-  Rocket, 
-  MessageSquare, 
-  ChevronDown,
-  Send,
-  Paperclip,
-  Sparkles,
-  Mic,
-  Download,
-  Zap,
-  Key,
-  Edit3,
-  Copy,
-  Check,
-  AlertCircle
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Loader2, Bot, FolderCode } from "lucide-react";
+import { api, type Project, type Session, type ClaudeMdFile } from "@/lib/api";
+import { OutputCacheProvider } from "@/lib/outputCache";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ProjectList } from "@/components/ProjectList";
+import { SessionList } from "@/components/SessionList";
+import { RunningClaudeSessions } from "@/components/RunningClaudeSessions";
+import { Topbar } from "@/components/Topbar";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
+import { ClaudeFileEditor } from "@/components/ClaudeFileEditor";
+import { Settings } from "@/components/Settings";
+import { CCAgents } from "@/components/CCAgents";
+import { ClaudeCodeSession } from "@/components/ClaudeCodeSession";
+import { UsageDashboard } from "@/components/UsageDashboard";
+import { MCPManager } from "@/components/MCPManager";
+import { NFOCredits } from "@/components/NFOCredits";
+import { ClaudeBinaryDialog } from "@/components/ClaudeBinaryDialog";
+import { Toast, ToastContainer } from "@/components/ui/toast";
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+type View = "welcome" | "projects" | "agents" | "editor" | "settings" | "claude-file-editor" | "claude-code-session" | "usage-dashboard" | "mcp";
 
-interface Model {
-  id: string;
-  name: string;
-  provider: string;
-  pricing: string;
-}
-
+/**
+ * Main App component - Manages the Claude directory browser UI
+ */
 function App() {
-  const [apiKey, setApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState("agentica/deepcoder-14b-preview");
-  const [selectedRouter, setSelectedRouter] = useState("OpenRouter");
-  const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<View>("welcome");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [editingClaudeFile, setEditingClaudeFile] = useState<ClaudeMdFile | null>(null);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showNFO, setShowNFO] = useState(false);
+  const [showClaudeBinaryDialog, setShowClaudeBinaryDialog] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [activeClaudeSessionId, setActiveClaudeSessionId] = useState<string | null>(null);
+  const [isClaudeStreaming, setIsClaudeStreaming] = useState(false);
 
-  // Available models
-  const models: Model[] = [
-    { id: "agentica/deepcoder-14b-preview", name: "Agentica: Deepcoder 14B Preview (free)", provider: "Agentica", pricing: "Free" },
-    { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", provider: "Anthropic", pricing: "Paid" },
-    { id: "openai/gpt-4o", name: "GPT-4o", provider: "OpenAI", pricing: "Paid" },
-    { id: "meta-llama/llama-3.1-8b-instruct", name: "Llama 3.1 8B Instruct", provider: "Meta", pricing: "Free" }
-  ];
-
-  // Load API key from localStorage
+  // Load projects on mount when in projects view
   useEffect(() => {
-    const savedApiKey = localStorage.getItem("bolt_ai_api_key");
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
+    if (view === "projects") {
+      loadProjects();
+    } else if (view === "welcome") {
+      // Reset loading state for welcome view
+      setLoading(false);
     }
-  }, []);
+  }, [view]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Listen for Claude session selection events
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSendMessage = async () => {
-    if (!message.trim() || !apiKey) return;
-    
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: message,
-      timestamp: new Date()
+    const handleSessionSelected = (event: CustomEvent) => {
+      const { session } = event.detail;
+      setSelectedSession(session);
+      handleViewChange("claude-code-session");
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setMessage("");
-    setIsLoading(true);
-    setError("");
+    const handleClaudeNotFound = () => {
+      setShowClaudeBinaryDialog(true);
+    };
 
+    window.addEventListener('claude-session-selected', handleSessionSelected as EventListener);
+    window.addEventListener('claude-not-found', handleClaudeNotFound as EventListener);
+    return () => {
+      window.removeEventListener('claude-session-selected', handleSessionSelected as EventListener);
+      window.removeEventListener('claude-not-found', handleClaudeNotFound as EventListener);
+    };
+  }, []);
+
+  /**
+   * Loads all projects from the ~/.claude/projects directory
+   */
+  const loadProjects = async () => {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Bolt AI"
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages: [
-            {
-              role: "system",
-              content: "You are Bolt AI, an intelligent coding assistant. Help users with programming tasks, code reviews, debugging, and development questions. Provide clear, concise, and practical solutions."
-            },
-            ...messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-            {
-              role: "user",
-              content: message
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.7
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.choices[0].message.content,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
+      setLoading(true);
+      setError(null);
+      const projectList = await api.listProjects();
+      setProjects(projectList);
     } catch (err) {
-      console.error("API Error:", err);
-      setError(err instanceof Error ? err.message : "Failed to send message");
+      console.error("Failed to load projects:", err);
+      setError("Failed to load projects. Please ensure ~/.claude directory exists.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  /**
+   * Handles project selection and loads its sessions
+   */
+  const handleProjectClick = async (project: Project) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const sessionList = await api.getProjectSessions(project.id);
+      setSessions(sessionList);
+      setSelectedProject(project);
+    } catch (err) {
+      console.error("Failed to load sessions:", err);
+      setError("Failed to load sessions for this project.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleApiKeySave = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem("bolt_ai_api_key", key);
-    setShowApiKeyInput(false);
+  /**
+   * Opens a new Claude Code session in the interactive UI
+   */
+  const handleNewSession = async () => {
+    handleViewChange("claude-code-session");
+    setSelectedSession(null);
   };
 
-  const copyApiKey = () => {
-    navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  /**
+   * Returns to project list view
+   */
+  const handleBack = () => {
+    setSelectedProject(null);
+    setSessions([]);
   };
 
-  const getApiKeyStatus = () => {
-    if (!apiKey) return { status: "error", text: "Not Set (Please set via UI or ENV_VAR)" };
-    if (apiKey.length < 10) return { status: "error", text: "Invalid API Key" };
-    return { status: "success", text: "✓ API Key Set" };
+  /**
+   * Handles editing a CLAUDE.md file from a project
+   */
+  const handleEditClaudeFile = (file: ClaudeMdFile) => {
+    setEditingClaudeFile(file);
+    handleViewChange("claude-file-editor");
   };
 
-  const apiKeyStatus = getApiKeyStatus();
+  /**
+   * Returns from CLAUDE.md file editor to projects view
+   */
+  const handleBackFromClaudeFileEditor = () => {
+    setEditingClaudeFile(null);
+    handleViewChange("projects");
+  };
+
+  /**
+   * Handles view changes with navigation protection
+   */
+  const handleViewChange = (newView: View) => {
+    // Check if we're navigating away from an active Claude session
+    if (view === "claude-code-session" && isClaudeStreaming && activeClaudeSessionId) {
+      const shouldLeave = window.confirm(
+        "Claude is still responding. If you navigate away, Claude will continue running in the background.\n\n" +
+        "You can return to this session from the Projects view.\n\n" +
+        "Do you want to continue?"
+      );
+      
+      if (!shouldLeave) {
+        return;
+      }
+    }
+    
+    setView(newView);
+  };
+
+  const renderContent = () => {
+    switch (view) {
+      case "welcome":
+        return (
+          <div className="flex items-center justify-center p-4" style={{ height: "100%" }}>
+            <div className="w-full max-w-4xl">
+              {/* Welcome Header */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-12 text-center"
+              >
+                <h1 className="text-4xl font-bold tracking-tight">
+                  <span className="rotating-symbol"></span>
+                  Welcome to Claudia
+                </h1>
+              </motion.div>
+
+              {/* Navigation Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                {/* CC Agents Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  <Card 
+                    className="h-64 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg border border-border/50 shimmer-hover"
+                    onClick={() => handleViewChange("agents")}
+                  >
+                    <div className="h-full flex flex-col items-center justify-center p-8">
+                      <Bot className="h-16 w-16 mb-4 text-primary" />
+                      <h2 className="text-xl font-semibold">CC Agents</h2>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                {/* CC Projects Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Card 
+                    className="h-64 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg border border-border/50 shimmer-hover"
+                    onClick={() => handleViewChange("projects")}
+                  >
+                    <div className="h-full flex flex-col items-center justify-center p-8">
+                      <FolderCode className="h-16 w-16 mb-4 text-primary" />
+                      <h2 className="text-xl font-semibold">CC Projects</h2>
+                    </div>
+                  </Card>
+                </motion.div>
+
+              </div>
+            </div>
+          </div>
+        );
+
+      case "agents":
+        return (
+          <div className="flex-1 overflow-hidden">
+            <CCAgents onBack={() => handleViewChange("welcome")} />
+          </div>
+        );
+
+      case "editor":
+        return (
+          <div className="flex-1 overflow-hidden">
+            <MarkdownEditor onBack={() => handleViewChange("welcome")} />
+          </div>
+        );
+      
+      case "settings":
+        return (
+          <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
+            <Settings onBack={() => handleViewChange("welcome")} />
+          </div>
+        );
+      
+      case "projects":
+        return (
+          <div className="flex h-full items-center justify-center p-4 overflow-y-auto">
+            <div className="w-full max-w-2xl">
+              {/* Header with back button */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-6"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleViewChange("welcome")}
+                  className="mb-4"
+                >
+                  ← Back to Home
+                </Button>
+                <div className="text-center">
+                  <h1 className="text-3xl font-bold tracking-tight">CC Projects</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Browse your Claude Code sessions
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Error display */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive"
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              {/* Loading state */}
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {/* Content */}
+              {!loading && (
+                <AnimatePresence mode="wait">
+                  {selectedProject ? (
+                    <motion.div
+                      key="sessions"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <SessionList
+                        sessions={sessions}
+                        projectPath={selectedProject.path}
+                        onBack={handleBack}
+                        onEditClaudeFile={handleEditClaudeFile}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="projects"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-4"
+                    >
+                      {/* New session button at the top */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <Button
+                          onClick={handleNewSession}
+                          size="default"
+                          className="w-full"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          New Claude Code session
+                        </Button>
+                      </motion.div>
+
+                      {/* Running Claude Sessions */}
+                      <RunningClaudeSessions />
+
+                      {/* Project list */}
+                      {projects.length > 0 ? (
+                        <ProjectList
+                          projects={projects}
+                          onProjectClick={handleProjectClick}
+                        />
+                      ) : (
+                        <div className="py-8 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            No projects found in ~/.claude/projects
+                          </p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
+          </div>
+        );
+      
+      case "claude-file-editor":
+        return editingClaudeFile ? (
+          <ClaudeFileEditor
+            file={editingClaudeFile}
+            onBack={handleBackFromClaudeFileEditor}
+          />
+        ) : null;
+      
+      case "claude-code-session":
+        return (
+          <ClaudeCodeSession
+            session={selectedSession || undefined}
+            onBack={() => {
+              setSelectedSession(null);
+              handleViewChange("projects");
+            }}
+            onStreamingChange={(isStreaming, sessionId) => {
+              setIsClaudeStreaming(isStreaming);
+              setActiveClaudeSessionId(sessionId);
+            }}
+          />
+        );
+      
+      case "usage-dashboard":
+        return (
+          <UsageDashboard onBack={() => handleViewChange("welcome")} />
+        );
+      
+      case "mcp":
+        return (
+          <MCPManager onBack={() => handleViewChange("welcome")} />
+        );
+      
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="mobile-browser">
-      {/* Status Bar */}
-      <div className="status-bar">
-        <div className="status-bar-left">
-          <span>🔋</span>
-          <span>📶</span>
-          <span>📶</span>
-          <span>TA K/S</span>
+    <OutputCacheProvider>
+      <div className="h-screen bg-background flex flex-col">
+        {/* Topbar */}
+        <Topbar
+          onClaudeClick={() => handleViewChange("editor")}
+          onSettingsClick={() => handleViewChange("settings")}
+          onUsageClick={() => handleViewChange("usage-dashboard")}
+          onMCPClick={() => handleViewChange("mcp")}
+          onInfoClick={() => setShowNFO(true)}
+        />
+        
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto">
+          {renderContent()}
         </div>
-        <div className="status-bar-right">
-          <span>{new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
-      </div>
-
-      {/* Browser Navigation */}
-      <div className="browser-nav">
-        <div className="nav-icon">
-          <MoreVertical size={16} />
-        </div>
-        <div className="nav-icon">
-          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>D</span>
-        </div>
-        <div className="nav-icon">
-          <Plus size={16} />
-        </div>
-        <div className="address-bar">
-          <span style={{ fontSize: '12px' }}>⚙️</span>
-          <span>1f.boltt22.pages.dev</span>
-        </div>
-        <div className="nav-icon">
-          <Home size={16} />
-        </div>
-      </div>
-
-      {/* App Header */}
-      <div className="app-header">
-        <div className="header-left">
-          <span>YOUSEF SH</span>
-        </div>
-        <div className="header-right">
-          <div className="header-icon">
-            <span style={{ fontSize: '14px' }}>&lt;&gt;</span>
-          </div>
-          <div className="header-icon">
-            <Brain size={16} />
-            <ChevronDown size={12} style={{ marginLeft: '2px' }} />
-          </div>
-          <div className="header-icon">
-            <FolderOpen size={16} />
-            <ChevronDown size={12} style={{ marginLeft: '2px' }} />
-          </div>
-          <div className="header-icon">
-            <Rocket size={16} />
-            <ChevronDown size={12} style={{ marginLeft: '2px' }} />
-          </div>
-          <div className="header-icon">
-            <MessageSquare size={16} />
-          </div>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.3)' }}></div>
-          <div className="header-icon">
-            <span style={{ fontSize: '14px' }}>&lt;&gt;</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="main-content" style={{ flexDirection: 'column', padding: '20px', overflowY: 'auto' }}>
-        {messages.length === 0 ? (
-          <div className="loading-dots">
-            <div className="loading-dot"></div>
-            <div className="loading-dot"></div>
-            <div className="loading-dot"></div>
-          </div>
-        ) : (
-          <div style={{ width: '100%', maxWidth: '600px' }}>
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  marginBottom: '16px',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  background: msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-card)',
-                  color: '#ffffff',
-                  maxWidth: '80%',
-                  marginLeft: msg.role === 'user' ? 'auto' : '0',
-                  wordWrap: 'break-word'
-                }}
-              >
-                <div style={{ fontSize: '14px', lineHeight: '1.5' }}>
-                  {msg.content}
-                </div>
-                <div style={{ 
-                  fontSize: '11px', 
-                  opacity: 0.7, 
-                  marginTop: '8px',
-                  textAlign: msg.role === 'user' ? 'right' : 'left'
-                }}>
-                  {msg.timestamp.toLocaleTimeString()}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '12px',
-                background: 'var(--color-card)',
-                color: '#ffffff',
-                maxWidth: '80%',
-                marginBottom: '16px'
-              }}>
-                <div className="loading-dots" style={{ justifyContent: 'flex-start' }}>
-                  <div className="loading-dot"></div>
-                  <div className="loading-dot"></div>
-                  <div className="loading-dot"></div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      {/* Input Panel */}
-      <div className="input-panel">
-        {/* OpenRouter Dropdown */}
-        <div className="input-section">
-          <label className="input-label">OpenRouter</label>
-          <div className="input-row">
-            <div className="input-field" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>{selectedRouter}</span>
-              <ChevronDown size={16} />
-            </div>
-          </div>
-        </div>
-
-        {/* Model Selection */}
-        <div className="input-section">
-          <label className="input-label">Model</label>
-          <div className="input-row">
-            <div className="input-field" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>{models.find(m => m.id === selectedModel)?.name || selectedModel}</span>
-              <ChevronDown size={16} />
-            </div>
-          </div>
-        </div>
-
-        {/* API Key */}
-        <div className="input-section">
-          <label className="input-label">OpenRouter API Key:</label>
-          <div className="input-row">
-            <div className={`input-field ${apiKeyStatus.status === 'error' ? 'error' : ''}`}>
-              <span style={{ color: apiKeyStatus.status === 'error' ? '#ef4444' : '#22c55e' }}>●</span>
-              <span style={{ 
-                color: apiKeyStatus.status === 'error' ? '#ef4444' : '#22c55e', 
-                marginLeft: '8px' 
-              }}>
-                {apiKeyStatus.text}
-              </span>
-            </div>
-            <button 
-              className="button secondary"
-              onClick={() => setShowApiKeyInput(true)}
-            >
-              <Edit3 size={14} />
-            </button>
-            <button className="button">
-              <Key size={14} />
-              Get API Key
-            </button>
-          </div>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="input-section">
-            <div style={{
-              padding: '12px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid #ef4444',
-              borderRadius: '8px',
-              color: '#ef4444',
-              fontSize: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <AlertCircle size={14} />
-              {error}
-            </div>
-          </div>
-        )}
-
-        {/* Main Input */}
-        <div className="input-section">
-          <div className="main-input-container">
-            <textarea
-              className="main-input"
-              placeholder="How can Bolt help you today?"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows={3}
-              disabled={!apiKey || isLoading}
+        
+        {/* NFO Credits Modal */}
+        {showNFO && <NFOCredits onClose={() => setShowNFO(false)} />}
+        
+        {/* Claude Binary Dialog */}
+        <ClaudeBinaryDialog
+          open={showClaudeBinaryDialog}
+          onOpenChange={setShowClaudeBinaryDialog}
+          onSuccess={() => {
+            setToast({ message: "Claude binary path saved successfully", type: "success" });
+            // Trigger a refresh of the Claude version check
+            window.location.reload();
+          }}
+          onError={(message) => setToast({ message, type: "error" })}
+        />
+        
+        {/* Toast Container */}
+        <ToastContainer>
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onDismiss={() => setToast(null)}
             />
-            <button 
-              className="send-button"
-              onClick={handleSendMessage}
-              disabled={!message.trim() || !apiKey || isLoading}
-              style={{ opacity: (!message.trim() || !apiKey || isLoading) ? 0.5 : 1 }}
-            >
-              <Send size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Toolbar */}
-        <div className="bottom-toolbar">
-          <div className="toolbar-icon">
-            <Paperclip size={16} />
-          </div>
-          <div className="toolbar-icon">
-            <Sparkles size={16} />
-          </div>
-          <div className="toolbar-icon">
-            <Mic size={16} />
-          </div>
-          <div className="toolbar-icon">
-            <Download size={16} />
-          </div>
-          <div className="toolbar-icon">
-            <ChevronDown size={16} />
-          </div>
-          <div className="toolbar-icon active">
-            <Zap size={16} />
-            <span className="toolbar-text">sdadmdy8 secur...</span>
-          </div>
-        </div>
+          )}
+        </ToastContainer>
       </div>
-
-      {/* API Key Input Modal */}
-      {showApiKeyInput && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'var(--color-card)',
-            padding: '24px',
-            borderRadius: '12px',
-            width: '90%',
-            maxWidth: '400px'
-          }}>
-            <h3 style={{ margin: '0 0 16px 0', color: '#ffffff' }}>Set OpenRouter API Key</h3>
-            <input
-              type="password"
-              placeholder="Enter your OpenRouter API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'var(--color-input)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '8px',
-                color: '#ffffff',
-                marginBottom: '16px'
-              }}
-            />
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowApiKeyInput(false)}
-                style={{
-                  padding: '8px 16px',
-                  background: 'var(--color-secondary)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#ffffff',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleApiKeySave(apiKey)}
-                style={{
-                  padding: '8px 16px',
-                  background: 'var(--color-primary)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: '#ffffff',
-                  cursor: 'pointer'
-                }}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </OutputCacheProvider>
   );
 }
 
