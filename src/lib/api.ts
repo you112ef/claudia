@@ -1495,4 +1495,200 @@ export const api = {
       throw error;
     }
   },
+
+  /**
+   * OpenRouter API client
+   */
+  async openRouter(apiKey: string): Promise<OpenRouterAPI> {
+    return new OpenRouterAPI(apiKey);
+  }
+};
+
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+  description: string;
+  pricing: {
+    prompt: string;
+    completion: string;
+  };
+  context_length: number;
+  architecture: {
+    modality: string;
+    tokenizer: string;
+    instruct_type: string;
+  };
+  top_provider: {
+    max_completion_tokens: number;
+    is_moderated: boolean;
+  };
+  per_request_limits: {
+    prompt_tokens: string;
+    completion_tokens: string;
+  };
+}
+
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatCompletionRequest {
+  model: string;
+  messages: ChatMessage[];
+  max_tokens?: number;
+  temperature?: number;
+  top_p?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+  stream?: boolean;
+}
+
+export interface ChatCompletionResponse {
+  id: string;
+  choices: Array<{
+    index: number;
+    message: {
+      role: 'assistant';
+      content: string;
+    };
+    finish_reason: string;
+  }>;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  model: string;
+  object: string;
+  created: number;
+}
+
+export class OpenRouterAPI {
+  private apiKey: string;
+  private baseURL = 'https://openrouter.ai/api/v1';
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  async getModels(): Promise<OpenRouterModel[]> {
+    const response = await fetch(`${this.baseURL}/models`, {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Bolt AI'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  }
+
+  async createChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+    const response = await fetch(`${this.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Bolt AI'
+      },
+      body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    return await response.json();
+  }
+
+  async validateApiKey(): Promise<boolean> {
+    try {
+      await this.getModels();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+// Popular models for quick access
+export const POPULAR_MODELS = [
+  {
+    id: "agentica/deepcoder-14b-preview",
+    name: "Agentica: Deepcoder 14B Preview",
+    description: "Free coding-focused model",
+    pricing: "Free"
+  },
+  {
+    id: "anthropic/claude-3.5-sonnet",
+    name: "Claude 3.5 Sonnet",
+    description: "Anthropic's latest model",
+    pricing: "Paid"
+  },
+  {
+    id: "openai/gpt-4o",
+    name: "GPT-4o",
+    description: "OpenAI's latest model",
+    pricing: "Paid"
+  },
+  {
+    id: "meta-llama/llama-3.1-8b-instruct",
+    name: "Llama 3.1 8B Instruct",
+    description: "Meta's efficient model",
+    pricing: "Free"
+  },
+  {
+    id: "google/gemini-pro",
+    name: "Gemini Pro",
+    description: "Google's advanced model",
+    pricing: "Paid"
+  },
+  {
+    id: "mistralai/mistral-7b-instruct",
+    name: "Mistral 7B Instruct",
+    description: "Fast and efficient model",
+    pricing: "Free"
+  }
+];
+
+// System prompts for different use cases
+export const SYSTEM_PROMPTS = {
+  coding: `You are Bolt AI, an intelligent coding assistant. Help users with:
+
+- Code reviews and improvements
+- Debugging and troubleshooting
+- Algorithm explanations and implementations
+- Best practices and design patterns
+- Language-specific guidance
+- Project structure recommendations
+
+Provide clear, concise, and practical solutions. When showing code, use proper syntax highlighting and explain your reasoning.`,
+
+  general: `You are Bolt AI, a helpful AI assistant. You can help with:
+
+- General questions and explanations
+- Writing and editing
+- Analysis and research
+- Creative tasks
+- Problem solving
+
+Be helpful, accurate, and engaging in your responses.`,
+
+  creative: `You are Bolt AI, a creative AI assistant. You can help with:
+
+- Creative writing and storytelling
+- Brainstorming and ideation
+- Content creation
+- Artistic and design concepts
+- Innovative problem solving
+
+Be imaginative, inspiring, and original in your responses.`
 };
