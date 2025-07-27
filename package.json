@@ -1,12 +1,12 @@
 {
-  "name": "bolt-ai",
+  "name": "claudia",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
-  "description": "Bolt AI - Intelligent Code Assistant powered by advanced AI models",
-  "keywords": ["ai", "code-assistant", "openrouter", "deepcoder", "react", "typescript"],
-  "author": "YOUSEF SH",
-  "license": "MIT",
+  "description": "A powerful GUI app and Toolkit for Claude Code",
+  "keywords": ["claude", "code", "ai", "desktop", "tauri", "react"],
+  "author": "Asterisk",
+  "license": "AGPL",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
