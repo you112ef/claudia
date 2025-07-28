@@ -1,3 +1,5 @@
+# Claudia
+
 <div align="center">
   <img src="https://github.com/user-attachments/assets/92fd93ed-e71b-4b94-b270-50684323dd00" alt="Claudia Logo" width="120" height="120">
 
@@ -69,8 +71,6 @@ Think of Claudia as your command center for Claude Code - bridging the gap betwe
 - **Agent Library**: Build a collection of purpose-built agents for different tasks
 - **Background Execution**: Run agents in separate processes for non-blocking operations
 - **Execution History**: Track all agent runs with detailed logs and performance metrics
-
-
 
 ### 📊 **Usage Analytics Dashboard**
 - **Cost Tracking**: Monitor your Claude API usage and costs in real-time

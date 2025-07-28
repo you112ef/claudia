@@ -164,55 +164,50 @@ export const Topbar: React.FC<TopbarProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "flex items-center justify-between px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        "flex items-center justify-between px-2 md:px-4 py-2 md:py-3 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
         className
       )}
     >
       {/* Status Indicator */}
       <StatusIndicator />
-      
       {/* Action Buttons */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1 md:space-x-2">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onUsageClick}
-          className="text-xs"
+          className="md:hidden"
+          title="Usage"
         >
-          <BarChart3 className="mr-2 h-3 w-3" />
-          Usage Dashboard
+          <BarChart3 className="h-5 w-5" />
         </Button>
-        
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onClaudeClick}
-          className="text-xs"
+          className="md:hidden"
+          title="CLAUDE.md"
         >
-          <FileText className="mr-2 h-3 w-3" />
-          CLAUDE.md
+          <FileText className="h-5 w-5" />
         </Button>
-        
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onMCPClick}
-          className="text-xs"
+          className="md:hidden"
+          title="MCP"
         >
-          <Network className="mr-2 h-3 w-3" />
-          MCP
+          <Network className="h-5 w-5" />
         </Button>
-        
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onSettingsClick}
-          className="text-xs"
+          className="md:hidden"
+          title="Settings"
         >
-          <Settings className="mr-2 h-3 w-3" />
-          Settings
+          <Settings className="h-5 w-5" />
         </Button>
-        
         <Button
           variant="ghost"
           size="icon"
@@ -222,6 +217,45 @@ export const Topbar: React.FC<TopbarProps> = ({
         >
           <Info className="h-4 w-4" />
         </Button>
+        {/* أزرار نصية في الشاشات المتوسطة والكبيرة */}
+        <div className="hidden md:flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onUsageClick}
+            className="text-xs"
+          >
+            <BarChart3 className="mr-2 h-3 w-3" />
+            Usage Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClaudeClick}
+            className="text-xs"
+          >
+            <FileText className="mr-2 h-3 w-3" />
+            CLAUDE.md
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onMCPClick}
+            className="text-xs"
+          >
+            <Network className="mr-2 h-3 w-3" />
+            MCP
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSettingsClick}
+            className="text-xs"
+          >
+            <Settings className="mr-2 h-3 w-3" />
+            Settings
+          </Button>
+        </div>
       </div>
     </motion.div>
   );

@@ -1,31 +1,27 @@
 @import "tailwindcss";
 
-/* Dark theme configuration */
+/* Dark theme configuration - Claudia Style */
 @theme {
-  /* Colors */
-  --color-background: oklch(0.12 0.01 240);
-  --color-foreground: oklch(0.98 0.01 240);
-  --color-card: oklch(0.14 0.01 240);
-  --color-card-foreground: oklch(0.98 0.01 240);
-  --color-popover: oklch(0.12 0.01 240);
-  --color-popover-foreground: oklch(0.98 0.01 240);
-  --color-primary: oklch(0.98 0.01 240);
-  --color-primary-foreground: oklch(0.17 0.01 240);
-  --color-secondary: oklch(0.16 0.01 240);
-  --color-secondary-foreground: oklch(0.98 0.01 240);
-  --color-muted: oklch(0.16 0.01 240);
-  --color-muted-foreground: oklch(0.68 0.01 240);
-  --color-accent: oklch(0.16 0.01 240);
-  --color-accent-foreground: oklch(0.98 0.01 240);
+  /* Colors - Original Claudia theme */
+  --color-background: oklch(0.05 0 0);
+  --color-foreground: oklch(0.95 0 0);
+  --color-card: oklch(0.1 0 0);
+  --color-card-foreground: oklch(0.95 0 0);
+  --color-popover: oklch(0.1 0 0);
+  --color-popover-foreground: oklch(0.95 0 0);
+  --color-primary: oklch(0.6 0.15 250);
+  --color-primary-foreground: oklch(0.95 0 0);
+  --color-secondary: oklch(0.15 0 0);
+  --color-secondary-foreground: oklch(0.95 0 0);
+  --color-muted: oklch(0.15 0 0);
+  --color-muted-foreground: oklch(0.6 0 0);
+  --color-accent: oklch(0.6 0.15 250);
+  --color-accent-foreground: oklch(0.95 0 0);
   --color-destructive: oklch(0.6 0.2 25);
-  --color-destructive-foreground: oklch(0.98 0.01 240);
-  --color-border: oklch(0.16 0.01 240);
-  --color-input: oklch(0.16 0.01 240);
-  --color-ring: oklch(0.52 0.015 240);
-  
-  /* Additional colors for status messages */
-  --color-green-500: oklch(0.72 0.20 142);
-  --color-green-600: oklch(0.64 0.22 142);
+  --color-destructive-foreground: oklch(0.95 0 0);
+  --color-border: oklch(0.2 0 0);
+  --color-input: oklch(0.15 0 0);
+  --color-ring: oklch(0.6 0.15 250);
 
   /* Border radius */
   --radius-sm: 0.25rem;
@@ -52,327 +48,251 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
 }
 
-/* Placeholder text styling */
-input::placeholder,
-textarea::placeholder {
-  color: var(--color-muted-foreground);
-  opacity: 0.6;
-}
-
-/* Cursor pointer for all interactive elements */
-button,
-a,
-[role="button"],
-[role="link"],
-[role="menuitem"],
-[role="tab"],
-[tabindex]:not([tabindex="-1"]),
-.cursor-pointer {
-  cursor: pointer;
-}
-
-/* Ensure disabled elements don't have pointer cursor */
-button:disabled,
-[disabled],
-.disabled {
-  cursor: not-allowed !important;
-}
-
-/* Remove all focus styles globally */
-* {
-  outline: none !important;
-  outline-offset: 0 !important;
-}
-
+/* Focus styles */
 *:focus,
-*:focus-visible,
-*:focus-within {
-  outline: none !important;
-  box-shadow: none !important;
+*:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
 }
 
-/* Specifically remove focus styles from form elements */
 input:focus,
-input:focus-visible,
 textarea:focus,
-textarea:focus-visible,
-select:focus,
-select:focus-visible,
-button:focus,
-button:focus-visible,
-[role="button"]:focus,
-[role="button"]:focus-visible,
-[role="combobox"]:focus,
-[role="combobox"]:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-  border-color: var(--color-input) !important;
+select:focus {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-color: var(--color-ring);
 }
 
-/* Remove ring styles */
-.ring-0,
-.ring-1,
-.ring-2,
-.ring,
-.ring-offset-0,
-.ring-offset-1,
-.ring-offset-2,
-.ring-offset {
-  box-shadow: none !important;
-}
-
-/* Custom utilities */
-@utility animate-in {
-  animation-name: enter;
-  animation-duration: 150ms;
-  animation-fill-mode: both;
-}
-
-@utility animate-out {
-  animation-name: exit;
-  animation-duration: 150ms;
-  animation-fill-mode: both;
-}
-
-@utility line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
+/* Animations */
 @keyframes enter {
   from {
-    opacity: var(--tw-enter-opacity, 1);
-    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0));
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
   to {
-    opacity: var(--tw-exit-opacity, 1);
-    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
+    opacity: 0;
+    transform: translateY(-10px);
   }
 }
 
-/* Markdown Editor Dark Mode Styles */
+/* Dark mode overrides */
 [data-color-mode="dark"] {
-  --color-border-default: rgb(48, 54, 61);
-  --color-canvas-default: rgb(13, 17, 23);
-  --color-canvas-subtle: rgb(22, 27, 34);
-  --color-fg-default: rgb(201, 209, 217);
-  --color-fg-muted: rgb(139, 148, 158);
-  --color-fg-subtle: rgb(110, 118, 129);
-  --color-accent-fg: rgb(88, 166, 255);
-  --color-danger-fg: rgb(248, 81, 73);
+  color-scheme: dark;
 }
 
+/* Markdown editor styles */
 .w-md-editor {
-  background-color: transparent !important;
-  color: var(--color-foreground) !important;
+  background-color: var(--color-card);
+  border-color: var(--color-border);
 }
 
 .w-md-editor.w-md-editor-focus {
-  box-shadow: none !important;
-  border-color: var(--color-border) !important;
-  outline: none !important;
+  border-color: var(--color-ring);
 }
 
 .w-md-editor-toolbar {
-  background-color: var(--color-card) !important;
-  border-bottom: 1px solid var(--color-border) !important;
+  background-color: var(--color-muted);
+  border-color: var(--color-border);
 }
 
 .w-md-editor-toolbar-divider {
-  background-color: var(--color-border) !important;
+  background-color: var(--color-border);
 }
 
 .w-md-editor-toolbar button {
-  color: var(--color-foreground) !important;
+  color: var(--color-muted-foreground);
 }
 
 .w-md-editor-toolbar button:hover {
-  background-color: var(--color-accent) !important;
-  color: var(--color-accent-foreground) !important;
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
 }
 
 .w-md-editor-content {
-  background-color: var(--color-background) !important;
+  background-color: var(--color-card);
 }
 
 .w-md-editor-text-pre,
-.w-md-editor-text-input,
-.w-md-editor-text {
-  color: var(--color-foreground) !important;
-  background-color: transparent !important;
+.w-md-editor-text-input {
+  color: var(--color-foreground);
 }
 
 .w-md-editor-preview {
-  background-color: var(--color-background) !important;
+  background-color: var(--color-card);
 }
 
 .wmde-markdown {
-  background-color: transparent !important;
-  color: var(--color-foreground) !important;
+  color: var(--color-foreground);
 }
 
-/* Prose styles for markdown rendering */
+/* Prose styles for markdown content */
 .prose {
   color: var(--color-foreground);
-  max-width: 65ch;
-  font-size: 1rem;
-  line-height: 1.75;
+  max-width: none;
 }
 
 .prose-sm {
-  font-size: 0.875rem;
-  line-height: 1.714;
+  color: var(--color-foreground);
+  max-width: none;
 }
 
 .prose p {
-  margin-top: 1.25em;
-  margin-bottom: 1.25em;
+  color: var(--color-foreground);
+  margin-bottom: 1rem;
 }
 
 .prose-sm p {
-  margin-top: 1.143em;
-  margin-bottom: 1.143em;
+  color: var(--color-foreground);
+  margin-bottom: 0.75rem;
 }
 
 .prose [class~="lead"] {
-  font-size: 1.25em;
-  line-height: 1.6;
-  margin-top: 1.2em;
-  margin-bottom: 1.2em;
+  color: var(--color-muted-foreground);
+  font-size: 1.125rem;
+  line-height: 1.75;
+  margin-bottom: 1rem;
 }
 
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-  margin-top: 0;
-  margin-bottom: 0.8888889em;
+  color: var(--color-foreground);
   font-weight: 600;
-  line-height: 1.1111111;
+  margin-bottom: 0.5rem;
 }
 
 .prose h1 {
-  font-size: 2.25em;
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  margin-top: 0;
 }
 
 .prose h2 {
-  font-size: 1.5em;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  margin-top: 2rem;
 }
 
 .prose h3 {
-  font-size: 1.25em;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  margin-top: 1.5rem;
 }
 
 .prose h4 {
-  font-size: 1em;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  margin-top: 1.5rem;
 }
 
 .prose a {
   color: var(--color-primary);
   text-decoration: underline;
-  font-weight: 500;
+  text-decoration-color: var(--color-border);
 }
 
 .prose strong {
+  color: var(--color-foreground);
   font-weight: 600;
 }
 
 .prose ol, .prose ul {
-  margin-top: 1.25em;
-  margin-bottom: 1.25em;
-  padding-left: 1.625em;
+  color: var(--color-foreground);
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
 }
 
 .prose li {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin-bottom: 0.25rem;
 }
 
 .prose > ul > li p {
-  margin-top: 0.75em;
-  margin-bottom: 0.75em;
+  margin-bottom: 0.5rem;
 }
 
 .prose > ol > li > *:first-child {
-  margin-top: 1.25em;
+  margin-top: 0;
 }
 
 .prose code {
-  font-weight: 600;
-  font-size: 0.875em;
   background-color: var(--color-muted);
-  padding: 0.125em 0.375em;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.25rem;
 }
 
 .prose pre {
+  background-color: var(--color-muted);
+  border-radius: var(--radius-md);
+  color: var(--color-foreground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  margin-bottom: 1rem;
   overflow-x: auto;
-  font-size: 0.875em;
-  line-height: 1.714;
-  margin-top: 1.714em;
-  margin-bottom: 1.714em;
-  border-radius: 0.375rem;
-  padding: 0.857em 1.143em;
-  background-color: var(--color-card);
+  padding: 0.75rem 1rem;
 }
 
 .prose pre code {
   background-color: transparent;
-  border-width: 0;
   border-radius: 0;
-  padding: 0;
-  font-weight: 400;
   color: inherit;
   font-size: inherit;
-  font-family: inherit;
-  line-height: inherit;
+  font-weight: inherit;
+  padding: 0;
 }
 
 .prose blockquote {
-  font-weight: 500;
+  border-left-color: var(--color-border);
+  border-left-width: 4px;
+  color: var(--color-muted-foreground);
   font-style: italic;
-  margin-top: 1.6em;
-  margin-bottom: 1.6em;
-  padding-left: 1em;
-  border-left: 0.25rem solid var(--color-border);
+  margin-bottom: 1rem;
+  padding-left: 1rem;
 }
 
 .prose hr {
-  margin-top: 3em;
-  margin-bottom: 3em;
   border-color: var(--color-border);
+  border-top-width: 1px;
+  margin-bottom: 1rem;
+  margin-top: 2rem;
 }
 
 .prose table {
+  border-collapse: collapse;
+  margin-bottom: 1rem;
   width: 100%;
-  table-layout: auto;
-  text-align: left;
-  margin-top: 2em;
-  margin-bottom: 2em;
-  font-size: 0.875em;
-  line-height: 1.714;
 }
 
 .prose thead {
-  border-bottom-width: 1px;
   border-bottom-color: var(--color-border);
+  border-bottom-width: 1px;
 }
 
 .prose thead th {
-  vertical-align: bottom;
-  padding-right: 0.571em;
-  padding-bottom: 0.571em;
-  padding-left: 0.571em;
+  color: var(--color-foreground);
   font-weight: 600;
+  padding: 0.5rem;
+  text-align: left;
 }
 
 .prose tbody tr {
-  border-bottom-width: 1px;
   border-bottom-color: var(--color-border);
+  border-bottom-width: 1px;
 }
 
 .prose tbody tr:last-child {
@@ -380,11 +300,10 @@ button:focus-visible,
 }
 
 .prose tbody td {
-  vertical-align: baseline;
-  padding: 0.571em;
+  padding: 0.5rem;
 }
 
-/* Dark mode adjustments */
+/* Dark prose overrides */
 .prose.dark\:prose-invert {
   color: var(--color-foreground);
 }
@@ -394,17 +313,15 @@ button:focus-visible,
 }
 
 .prose.dark\:prose-invert strong {
-  color: inherit;
+  color: var(--color-foreground);
 }
 
 .prose.dark\:prose-invert code {
   color: var(--color-foreground);
-  background-color: var(--color-muted);
 }
 
 .prose.dark\:prose-invert pre {
-  background-color: rgb(13, 17, 23);
-  border: 1px solid var(--color-border);
+  color: var(--color-foreground);
 }
 
 .prose.dark\:prose-invert thead {
@@ -415,63 +332,50 @@ button:focus-visible,
   border-bottom-color: var(--color-border);
 }
 
-/* Remove maximum width constraint */
 .prose.max-w-none {
   max-width: none;
 }
 
 /* Rotating symbol animation */
 @keyframes rotate-symbol {
-  0%   { content: "◐"; transform: scale(1); }
-  25%  { content: "◓"; transform: scale(1); }
-  50%  { content: "◑"; transform: scale(1); }
-  75%  { content: "◒"; transform: scale(1); }
-  100% { content: "◐"; transform: scale(1); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: scale(0.8);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
 .rotating-symbol {
   display: inline-block;
-  vertical-align: text-bottom;
-  line-height: 1;
-  animation: fade-in 0.2s ease-out;
-  font-weight: normal;
 }
 
 .rotating-symbol::before {
-  content: "◐";
-  animation: rotate-symbol 1.6s steps(4, end) infinite;
+  content: "⚡";
   display: inline-block;
-  font-size: inherit;
-  line-height: 1;
-  vertical-align: baseline;
-  transform-origin: center;
+  animation: rotate-symbol 2s linear infinite;
 }
 
-/* Make the rotating symbol more prominent at larger sizes */
 .rotating-symbol.text-xl::before,
 .rotating-symbol.text-2xl::before {
-  font-weight: 900;
+  font-size: inherit;
 }
 
-/* Shimmer hover effect */
+/* Shimmer effect */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .shimmer-hover {
@@ -480,48 +384,39 @@ button:focus-visible,
 }
 
 .shimmer-hover::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.05),
-    transparent
-  );
-  transition: left 0.5s;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
 }
 
 .shimmer-hover:hover::before {
-  left: 100%;
-  animation: shimmer 0.5s;
+  transform: translateX(100%);
 }
 
-/* --- THEME-MATCHING SCROLLBARS --- */
-
-/* For Firefox */
+/* Scrollbar styles */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-muted-foreground) var(--color-background);
+  scrollbar-color: var(--color-border) transparent;
 }
 
-/* For Webkit Browsers (Chrome, Safari, Edge) */
 *::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--color-background);
+  background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: var(--color-muted);
-  border-radius: 6px;
-  border: 3px solid var(--color-background);
+  background-color: var(--color-border);
+  border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
@@ -532,86 +427,70 @@ button:focus-visible,
   background: transparent;
 }
 
-/* Code blocks and editors specific scrollbar */
 pre::-webkit-scrollbar,
-.w-md-editor-content::-webkit-scrollbar,
-code::-webkit-scrollbar,
-.overflow-auto::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+code::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
 pre::-webkit-scrollbar-thumb,
-.w-md-editor-content::-webkit-scrollbar-thumb,
-code::-webkit-scrollbar-thumb,
-.overflow-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.2);
+code::-webkit-scrollbar-thumb {
+  background-color: var(--color-muted-foreground);
+  border-radius: 3px;
 }
 
 pre::-webkit-scrollbar-thumb:hover,
-.w-md-editor-content::-webkit-scrollbar-thumb:hover,
-code::-webkit-scrollbar-thumb:hover,
-.overflow-auto::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.4);
+code::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-foreground);
 }
 
-/* Syntax highlighter specific */
 .bg-zinc-950 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
 
 .bg-zinc-950 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
 }
 
 .bg-zinc-950 ::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.3);
-  border-radius: 4px;
+  background-color: var(--color-border);
 }
 
 .bg-zinc-950 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.5);
+  background-color: var(--color-muted-foreground);
 }
 
-/* Code preview specific scrollbar */
 .code-preview-scroll::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 6px;
 }
 
 .code-preview-scroll::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  background: transparent;
 }
 
 .code-preview-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.4);
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background-color: var(--color-muted-foreground);
+  border-radius: 3px;
 }
 
 .code-preview-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.6);
+  background-color: var(--color-foreground);
 }
 
 .code-preview-scroll::-webkit-scrollbar-thumb:active {
-  background-color: rgba(107, 114, 128, 0.8);
+  background-color: var(--color-primary);
 }
 
 .code-preview-scroll::-webkit-scrollbar-corner {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  background: transparent;
 }
 
-/* Firefox scrollbar for code preview */
 .code-preview-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.4) rgba(0, 0, 0, 0.2);
+  scrollbar-color: var(--color-muted-foreground) transparent;
 }
 
-/* NFO Credits Scanlines Animation */
+/* Scanlines animation */
 @keyframes scanlines {
   0% {
     transform: translateY(-100%);
@@ -622,42 +501,35 @@ code::-webkit-scrollbar-thumb:hover,
 }
 
 .animate-scanlines {
-  animation: scanlines 8s linear infinite;
+  animation: scanlines 2s linear infinite;
 }
 
-/* Screenshot Shutter Animation */
+/* Shutter flash animation */
 @keyframes shutterFlash {
-  0% {
+  0%, 100% {
     opacity: 0;
   }
   50% {
     opacity: 1;
-  }
-  100% {
-    opacity: 0;
   }
 }
 
 .shutter-flash {
-  animation: shutterFlash 0.5s ease-in-out;
+  animation: shutterFlash 0.3s ease-in-out;
 }
 
-/* Image Move to Input Animation */
+/* Move to input animation */
 @keyframes moveToInput {
   0% {
-    transform: scale(1) translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
-  50% {
-    transform: scale(0.3) translateY(50%);
-    opacity: 0.8;
-  }
   100% {
-    transform: scale(0.1) translateY(100vh);
+    transform: translateY(-20px) scale(0.8);
     opacity: 0;
   }
 }
 
 .image-move-to-input {
-  animation: moveToInput 0.8s ease-in-out forwards;
+  animation: moveToInput 0.5s ease-out forwards;
 } 

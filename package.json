@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "A powerful GUI app and Toolkit for Claude Code",
+  "keywords": ["claude", "code", "ai", "desktop", "tauri", "react"],
+  "author": "Asterisk",
+  "license": "AGPL",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
