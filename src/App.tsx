@@ -398,28 +398,28 @@ function App() {
           onUsageClick={() => handleViewChange("usage-dashboard")}
           onMCPClick={() => handleViewChange("mcp")}
           onInfoClick={() => setShowNFO(true)}
+          className="sticky top-0 z-30"
         />
-        
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          {renderContent()}
+        <div className="flex-1 overflow-y-auto flex flex-col md:flex-row">
+          {/* في الشاشات الكبيرة: sidebar (قائمة المشاريع/الجلسات) */}
+          {/* في الشاشات الصغيرة: تظهر القوائم كـ Drawer أو صفحة كاملة */}
+          <div className="w-full md:w-auto flex-1 flex flex-col">
+            {renderContent()}
+          </div>
         </div>
-        
         {/* NFO Credits Modal */}
         {showNFO && <NFOCredits onClose={() => setShowNFO(false)} />}
-        
         {/* Claude Binary Dialog */}
         <ClaudeBinaryDialog
           open={showClaudeBinaryDialog}
           onOpenChange={setShowClaudeBinaryDialog}
           onSuccess={() => {
             setToast({ message: "Claude binary path saved successfully", type: "success" });
-            // Trigger a refresh of the Claude version check
             window.location.reload();
           }}
           onError={(message) => setToast({ message, type: "error" })}
         />
-        
         {/* Toast Container */}
         <ToastContainer>
           {toast && (
